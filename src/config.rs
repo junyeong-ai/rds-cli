@@ -177,3 +177,155 @@ impl ApplicationConfig {
             .ok_or_else(|| anyhow::anyhow!("Saved query '{}' not found", name))
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_default_settings() {
+        let defaults = DefaultSettings::default();
+        assert_eq!(defaults.default_profile, "local");
+        assert_eq!(defaults.cache_ttl_hours, 24);
+        assert_eq!(defaults.output_format, "table");
+    }
+
+    #[test]
+    fn test_merge_profiles() {
+        let mut config1 = ApplicationConfig::default();
+        config1.profiles.insert(
+            "local".to_string(),
+            DatabaseProfile {
+                db_type: "postgresql".to_string(),
+                host: "localhost".to_string(),
+                port: 5432,
+                user: "user1".to_string(),
+                password: "".to_string(),
+                database: "db1".to_string(),
+                schema: Some("public".to_string()),
+                safety: SafetyPolicy {
+                    default_limit: 1000,
+                    max_limit: 10000,
+                    timeout_seconds: 10,
+                    allowed_operations: vec!["SELECT".to_string()],
+                },
+            },
+        );
+
+        let mut config2 = ApplicationConfig::default();
+        config2.profiles.insert(
+            "production".to_string(),
+            DatabaseProfile {
+                db_type: "mysql".to_string(),
+                host: "prod.example.com".to_string(),
+                port: 3306,
+                user: "readonly".to_string(),
+                password: "".to_string(),
+                database: "prod_db".to_string(),
+                schema: None,
+                safety: SafetyPolicy {
+                    default_limit: 100,
+                    max_limit: 1000,
+                    timeout_seconds: 5,
+                    allowed_operations: vec!["SELECT".to_string()],
+                },
+            },
+        );
+
+        let merged = config1.merge(config2);
+        assert_eq!(merged.profiles.len(), 2);
+        assert!(merged.profiles.contains_key("local"));
+        assert!(merged.profiles.contains_key("production"));
+    }
+
+    #[test]
+    fn test_merge_override_profile() {
+        let mut config1 = ApplicationConfig::default();
+        config1.profiles.insert(
+            "local".to_string(),
+            DatabaseProfile {
+                db_type: "postgresql".to_string(),
+                host: "localhost".to_string(),
+                port: 5432,
+                user: "user1".to_string(),
+                password: "".to_string(),
+                database: "db1".to_string(),
+                schema: Some("public".to_string()),
+                safety: SafetyPolicy {
+                    default_limit: 1000,
+                    max_limit: 10000,
+                    timeout_seconds: 10,
+                    allowed_operations: vec!["SELECT".to_string()],
+                },
+            },
+        );
+
+        let mut config2 = ApplicationConfig::default();
+        config2.profiles.insert(
+            "local".to_string(),
+            DatabaseProfile {
+                db_type: "mysql".to_string(),
+                host: "other.example.com".to_string(),
+                port: 3306,
+                user: "user2".to_string(),
+                password: "".to_string(),
+                database: "db2".to_string(),
+                schema: None,
+                safety: SafetyPolicy {
+                    default_limit: 100,
+                    max_limit: 1000,
+                    timeout_seconds: 5,
+                    allowed_operations: vec!["SELECT".to_string()],
+                },
+            },
+        );
+
+        let merged = config1.merge(config2);
+        assert_eq!(merged.profiles.len(), 1);
+        let local = merged.profiles.get("local").unwrap();
+        assert_eq!(local.db_type, "mysql"); // overridden
+        assert_eq!(local.host, "other.example.com"); // overridden
+    }
+
+    #[test]
+    fn test_merge_saved_queries() {
+        let mut config1 = ApplicationConfig::default();
+        config1.saved_queries.insert(
+            "query1".to_string(),
+            SavedQuery {
+                sql: "SELECT 1".to_string(),
+                description: Some("Test 1".to_string()),
+                params: vec![],
+            },
+        );
+
+        let mut config2 = ApplicationConfig::default();
+        config2.saved_queries.insert(
+            "query2".to_string(),
+            SavedQuery {
+                sql: "SELECT 2".to_string(),
+                description: Some("Test 2".to_string()),
+                params: vec![],
+            },
+        );
+
+        let merged = config1.merge(config2);
+        assert_eq!(merged.saved_queries.len(), 2);
+        assert!(merged.saved_queries.contains_key("query1"));
+        assert!(merged.saved_queries.contains_key("query2"));
+    }
+
+    #[test]
+    fn test_merge_defaults() {
+        let mut config1 = ApplicationConfig::default();
+        config1.defaults.default_profile = "local".to_string();
+
+        let mut config2 = ApplicationConfig::default();
+        config2.defaults.default_profile = "production".to_string();
+        config2.defaults.cache_ttl_hours = 48;
+
+        let merged = config1.merge(config2);
+        assert_eq!(merged.defaults.default_profile, "production"); // overridden
+        assert_eq!(merged.defaults.cache_ttl_hours, 48); // overridden
+    }
+}

@@ -298,3 +298,62 @@ pub fn format_saved_queries_json(
         Ok(serde_json::to_string(&result)?)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_format_from_str_table() {
+        assert!(matches!(
+            OutputFormat::from_str("table").unwrap(),
+            OutputFormat::Table
+        ));
+        assert!(matches!(
+            OutputFormat::from_str("TABLE").unwrap(),
+            OutputFormat::Table
+        ));
+    }
+
+    #[test]
+    fn test_format_from_str_json() {
+        assert!(matches!(
+            OutputFormat::from_str("json").unwrap(),
+            OutputFormat::Json
+        ));
+        assert!(matches!(
+            OutputFormat::from_str("JSON").unwrap(),
+            OutputFormat::Json
+        ));
+    }
+
+    #[test]
+    fn test_format_from_str_json_pretty() {
+        assert!(matches!(
+            OutputFormat::from_str("json-pretty").unwrap(),
+            OutputFormat::JsonPretty
+        ));
+        assert!(matches!(
+            OutputFormat::from_str("pretty").unwrap(),
+            OutputFormat::JsonPretty
+        ));
+    }
+
+    #[test]
+    fn test_format_from_str_csv() {
+        assert!(matches!(
+            OutputFormat::from_str("csv").unwrap(),
+            OutputFormat::Csv
+        ));
+    }
+
+    #[test]
+    fn test_format_from_str_invalid() {
+        let result = OutputFormat::from_str("invalid");
+        assert!(result.is_err());
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("Unknown format: invalid"));
+    }
+}

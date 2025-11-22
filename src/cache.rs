@@ -138,3 +138,130 @@ impl SchemaCache {
         anyhow::bail!("Table not found")
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use chrono::Utc;
+    use std::collections::HashMap;
+
+    fn create_test_cache() -> SchemaCache {
+        let mut tables = HashMap::new();
+        
+        tables.insert(
+            "users".to_string(),
+            TableMetadata {
+                name: "users".to_string(),
+                columns: vec![],
+                primary_key: vec![],
+                foreign_keys: vec![],
+                referenced_by: vec![],
+            },
+        );
+        
+        tables.insert(
+            "user_roles".to_string(),
+            TableMetadata {
+                name: "user_roles".to_string(),
+                columns: vec![],
+                primary_key: vec![],
+                foreign_keys: vec![],
+                referenced_by: vec![],
+            },
+        );
+        
+        tables.insert(
+            "orders".to_string(),
+            TableMetadata {
+                name: "orders".to_string(),
+                columns: vec![],
+                primary_key: vec![],
+                foreign_keys: vec![],
+                referenced_by: vec![],
+            },
+        );
+
+        SchemaCache {
+            cached_at: Utc::now(),
+            profile_name: "test".to_string(),
+            database_type: "postgresql".to_string(),
+            tables,
+        }
+    }
+
+    #[test]
+    fn test_find_tables_exact() {
+        let cache = create_test_cache();
+        let results = cache.find_tables("users");
+        assert_eq!(results.len(), 1);
+        assert_eq!(results[0].name, "users");
+    }
+
+    #[test]
+    fn test_find_tables_partial() {
+        let cache = create_test_cache();
+        let results = cache.find_tables("user");
+        assert_eq!(results.len(), 2); // users and user_roles
+    }
+
+    #[test]
+    fn test_find_tables_case_insensitive() {
+        let cache = create_test_cache();
+        let results = cache.find_tables("USER");
+        assert_eq!(results.len(), 2);
+    }
+
+    #[test]
+    fn test_find_tables_no_match() {
+        let cache = create_test_cache();
+        let results = cache.find_tables("nonexistent");
+        assert_eq!(results.len(), 0);
+    }
+
+    #[test]
+    fn test_suggest_tables_exact() {
+        let cache = create_test_cache();
+        let suggestions = cache.suggest_tables("users");
+        assert!(suggestions.len() > 0);
+        assert_eq!(suggestions[0].0, "users");
+        assert_eq!(suggestions[0].1, 0); // distance 0 (exact match comes first)
+    }
+
+    #[test]
+    fn test_suggest_tables_typo() {
+        let cache = create_test_cache();
+        let suggestions = cache.suggest_tables("user");
+        assert!(suggestions.len() > 0);
+        // "users" should be first (distance 1)
+        assert_eq!(suggestions[0].0, "users");
+        assert_eq!(suggestions[0].1, 1);
+    }
+
+    #[test]
+    fn test_suggest_tables_max_distance() {
+        let cache = create_test_cache();
+        let suggestions = cache.suggest_tables("usr");
+        assert!(suggestions.len() > 0);
+        // distance should be <= 3
+        for (_, dist) in &suggestions {
+            assert!(*dist <= 3);
+        }
+    }
+
+    #[test]
+    fn test_suggest_tables_sorted_by_distance() {
+        let cache = create_test_cache();
+        let suggestions = cache.suggest_tables("user");
+        // Should be sorted by distance (ascending)
+        for i in 1..suggestions.len() {
+            assert!(suggestions[i].1 >= suggestions[i - 1].1);
+        }
+    }
+
+    #[test]
+    fn test_suggest_tables_max_3_results() {
+        let cache = create_test_cache();
+        let suggestions = cache.suggest_tables("o");
+        assert!(suggestions.len() <= 3);
+    }
+}

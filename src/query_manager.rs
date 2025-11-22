@@ -143,3 +143,43 @@ pub struct QueryDetails {
     pub description: Option<String>,
     pub params: Vec<String>,
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_extract_params_single() {
+        let sql = "SELECT * FROM users WHERE email = :email";
+        let params = QueryManager::extract_params(sql);
+        assert_eq!(params, vec!["email"]);
+    }
+
+    #[test]
+    fn test_extract_params_multiple() {
+        let sql = "SELECT * FROM orders WHERE user_id = :user_id AND status = :status";
+        let params = QueryManager::extract_params(sql);
+        assert_eq!(params, vec!["status", "user_id"]); // sorted
+    }
+
+    #[test]
+    fn test_extract_params_duplicates() {
+        let sql = "SELECT * FROM logs WHERE :date >= start AND :date <= end";
+        let params = QueryManager::extract_params(sql);
+        assert_eq!(params, vec!["date"]); // deduplicated
+    }
+
+    #[test]
+    fn test_extract_params_none() {
+        let sql = "SELECT * FROM users";
+        let params = QueryManager::extract_params(sql);
+        assert_eq!(params, Vec::<String>::new());
+    }
+
+    #[test]
+    fn test_extract_params_complex() {
+        let sql = "SELECT * FROM orders WHERE user_id = :user_id AND status = :status LIMIT :limit";
+        let params = QueryManager::extract_params(sql);
+        assert_eq!(params, vec!["limit", "status", "user_id"]); // sorted
+    }
+}
