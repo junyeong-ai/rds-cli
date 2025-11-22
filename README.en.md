@@ -1,11 +1,20 @@
 # RDS CLI
 
+[![CI](https://github.com/junyeong-ai/rds-cli/workflows/CI/badge.svg)](https://github.com/junyeong-ai/rds-cli/actions)
+[![Lint](https://github.com/junyeong-ai/rds-cli/workflows/Lint/badge.svg)](https://github.com/junyeong-ai/rds-cli/actions)
+[![Rust](https://img.shields.io/badge/rust-1.91.1%2B%20(2024%20edition)-orange?style=flat-square&logo=rust)](https://www.rust-lang.org)
+[![Version](https://img.shields.io/badge/version-0.1.0-blue?style=flat-square)](https://github.com/junyeong-ai/rds-cli/releases)
+
+> **🌐 [한국어](README.md)** | **English**
+
+---
+
 > **⚡ Fast and Safe Database CLI for PostgreSQL/MySQL**
-
-[![Rust](https://img.shields.io/badge/rust-1.91.1%2B-orange?style=flat-square)](https://www.rust-lang.org)
-[![Version](https://img.shields.io/badge/version-0.1.0-blue?style=flat-square)](https://github.com/your-username/rds-cli/releases)
-
-**[한국어](README.md)** | **[English](#)**
+>
+> - 🚀 **Blazing Fast** (Rust-based, <5ms schema lookup)
+> - 🔒 **Production Safe** (Auto LIMIT, read-only mode)
+> - 📝 **Team Collaboration** (Git-versioned Named Queries)
+> - 🔍 **Smart Search** (Fuzzy matching, auto-complete)
 
 ---
 
@@ -27,7 +36,7 @@ Traditional DB clients are **slow**, **dangerous**, and **hard to collaborate**.
 
 ```bash
 # 1. Install (one-liner)
-curl -fsSL https://raw.githubusercontent.com/your-username/rds-cli/main/scripts/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/junyeong-ai/rds-cli/main/scripts/install.sh | bash
 
 # 2. Configure (1 minute)
 rds-cli config init
@@ -102,7 +111,7 @@ rds-cli --format csv query "SELECT * FROM products" > products.csv
 ### Recommended: Prebuilt Binary
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/your-username/rds-cli/main/scripts/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/junyeong-ai/rds-cli/main/scripts/install.sh | bash
 ```
 
 ### Cargo

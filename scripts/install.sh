@@ -3,7 +3,7 @@ set -e
 
 BINARY_NAME="rds-cli"
 INSTALL_DIR="${INSTALL_DIR:-$HOME/.local/bin}"
-REPO="your-username/rds-cli"  # TODO: Update with actual GitHub repo
+REPO="junyeong-ai/rds-cli"  # TODO: Update with actual GitHub repo
 SKILL_NAME="db-query"
 PROJECT_SKILL_DIR=".claude/skills/$SKILL_NAME"
 USER_SKILL_DIR="$HOME/.claude/skills/$SKILL_NAME"

@@ -1,11 +1,20 @@
 # RDS CLI
 
+[![CI](https://github.com/junyeong-ai/rds-cli/workflows/CI/badge.svg)](https://github.com/junyeong-ai/rds-cli/actions)
+[![Lint](https://github.com/junyeong-ai/rds-cli/workflows/Lint/badge.svg)](https://github.com/junyeong-ai/rds-cli/actions)
+[![Rust](https://img.shields.io/badge/rust-1.91.1%2B%20(2024%20edition)-orange?style=flat-square&logo=rust)](https://www.rust-lang.org)
+[![Version](https://img.shields.io/badge/version-0.1.0-blue?style=flat-square)](https://github.com/junyeong-ai/rds-cli/releases)
+
+> **🌐 한국어** | **[English](README.en.md)**
+
+---
+
 > **⚡ PostgreSQL/MySQL을 위한 빠르고 안전한 Database CLI**
-
-[![Rust](https://img.shields.io/badge/rust-1.91.1%2B-orange?style=flat-square)](https://www.rust-lang.org)
-[![Version](https://img.shields.io/badge/version-0.1.0-blue?style=flat-square)](https://github.com/your-username/rds-cli/releases)
-
-**[한국어](#)** | **[English](README.en.md)**
+>
+> - 🚀 **초고속** (Rust 기반, <5ms 스키마 조회)
+> - 🔒 **프로덕션 안전** (자동 LIMIT, 읽기 전용)
+> - 📝 **팀 협업** (Git 버전 관리 Named Queries)
+> - 🔍 **스마트 검색** (퍼지 매칭, 자동 완성)
 
 ---
 
@@ -27,7 +36,7 @@
 
 ```bash
 # 1. 설치 (1줄)
-curl -fsSL https://raw.githubusercontent.com/your-username/rds-cli/main/scripts/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/junyeong-ai/rds-cli/main/scripts/install.sh | bash
 
 # 2. 설정 (1분)
 rds-cli config init
@@ -102,7 +111,7 @@ rds-cli --format csv query "SELECT * FROM products" > products.csv
 ### 추천: Prebuilt Binary
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/your-username/rds-cli/main/scripts/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/junyeong-ai/rds-cli/main/scripts/install.sh | bash
 ```
 
 ### Cargo

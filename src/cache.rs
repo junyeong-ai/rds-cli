@@ -222,7 +222,7 @@ mod tests {
     fn test_suggest_tables_exact() {
         let cache = create_test_cache();
         let suggestions = cache.suggest_tables("users");
-        assert!(suggestions.len() > 0);
+        assert!(!suggestions.is_empty());
         assert_eq!(suggestions[0].0, "users");
         assert_eq!(suggestions[0].1, 0); // distance 0 (exact match comes first)
     }
@@ -231,7 +231,7 @@ mod tests {
     fn test_suggest_tables_typo() {
         let cache = create_test_cache();
         let suggestions = cache.suggest_tables("user");
-        assert!(suggestions.len() > 0);
+        assert!(!suggestions.is_empty());
         // "users" should be first (distance 1)
         assert_eq!(suggestions[0].0, "users");
         assert_eq!(suggestions[0].1, 1);
@@ -241,7 +241,7 @@ mod tests {
     fn test_suggest_tables_max_distance() {
         let cache = create_test_cache();
         let suggestions = cache.suggest_tables("usr");
-        assert!(suggestions.len() > 0);
+        assert!(!suggestions.is_empty());
         // distance should be <= 3
         for (_, dist) in &suggestions {
             assert!(*dist <= 3);

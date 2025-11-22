@@ -1,12 +1,12 @@
 [package]
 name = "rds-cli"
 version = "0.1.0"
-authors = ["Your Name <your.email@example.com>"]
+authors = ["junyeong-ai <ai.junyeong@gmail.com>"]
 edition = "2024"
 rust-version = "1.91.1"
 description = "Universal Database Intelligence Layer for AI Agents - PostgreSQL/MySQL CLI with schema exploration, named queries, and multi-format output"
-homepage = "https://github.com/your-username/rds-cli"
-repository = "https://github.com/your-username/rds-cli"
+homepage = "https://github.com/junyeong-ai/rds-cli"
+repository = "https://github.com/junyeong-ai/rds-cli"
 license = "MIT OR Apache-2.0"
 keywords = ["database", "cli", "rds", "postgresql", "mysql"]
 categories = ["command-line-utilities", "database"]
@@ -28,7 +28,7 @@ serde_json = "1.0"
 toml = "0.9"
 anyhow = "1.0"
 thiserror = "2.0"
-tabled = "0.16"
+tabled = "0.20"
 chrono = { version = "0.4", features = ["serde"] }
 dirs = "6.0"
 uuid = { version = "1.11", features = ["v4", "serde"] }
