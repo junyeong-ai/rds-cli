@@ -12,3 +12,8 @@ Thumbs.db
 *.tmp
 *.swp
 .vscode/
+
+# Claude Code & Specify
+.claude/
+!.claude/skills/
+.specify/
