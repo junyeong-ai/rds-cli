@@ -109,7 +109,12 @@ mod tests {
         let validator = QueryValidator::new(create_test_policy(), "postgresql");
         let result = validator.validate("DELETE FROM users WHERE id = 1");
         assert!(result.is_err());
-        assert!(result.unwrap_err().to_string().contains("Only SELECT queries allowed"));
+        assert!(
+            result
+                .unwrap_err()
+                .to_string()
+                .contains("Only SELECT queries allowed")
+        );
     }
 
     #[test]
@@ -131,6 +136,11 @@ mod tests {
         let validator = QueryValidator::new(create_test_policy(), "postgresql");
         let result = validator.validate("");
         assert!(result.is_err());
-        assert!(result.unwrap_err().to_string().contains("No SQL statement provided"));
+        assert!(
+            result
+                .unwrap_err()
+                .to_string()
+                .contains("No SQL statement provided")
+        );
     }
 }

@@ -147,7 +147,7 @@ mod tests {
 
     fn create_test_cache() -> SchemaCache {
         let mut tables = HashMap::new();
-        
+
         tables.insert(
             "users".to_string(),
             TableMetadata {
@@ -158,7 +158,7 @@ mod tests {
                 referenced_by: vec![],
             },
         );
-        
+
         tables.insert(
             "user_roles".to_string(),
             TableMetadata {
@@ -169,7 +169,7 @@ mod tests {
                 referenced_by: vec![],
             },
         );
-        
+
         tables.insert(
             "orders".to_string(),
             TableMetadata {

@@ -351,9 +351,11 @@ mod tests {
     fn test_format_from_str_invalid() {
         let result = OutputFormat::from_str("invalid");
         assert!(result.is_err());
-        assert!(result
-            .unwrap_err()
-            .to_string()
-            .contains("Unknown format: invalid"));
+        assert!(
+            result
+                .unwrap_err()
+                .to_string()
+                .contains("Unknown format: invalid")
+        );
     }
 }
