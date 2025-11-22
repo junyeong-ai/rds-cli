@@ -1,0 +1,47 @@
+[package]
+name = "rds-cli"
+version = "0.1.0"
+authors = ["Your Name <your.email@example.com>"]
+edition = "2024"
+rust-version = "1.91.1"
+description = "Universal Database Intelligence Layer for AI Agents - PostgreSQL/MySQL CLI with schema exploration, named queries, and multi-format output"
+homepage = "https://github.com/your-username/rds-cli"
+repository = "https://github.com/your-username/rds-cli"
+license = "MIT OR Apache-2.0"
+keywords = ["database", "cli", "rds", "postgresql", "mysql"]
+categories = ["command-line-utilities", "database"]
+readme = "README.md"
+
+[[bin]]
+name = "rds-cli"
+path = "src/main.rs"
+
+[dependencies]
+clap = { version = "4.5", features = ["derive", "env"] }
+tokio = { version = "1.48", features = ["macros", "rt-multi-thread", "time", "fs"] }
+tokio-postgres = "0.7"
+postgres-types = { version = "0.2", features = ["derive", "with-chrono-0_4", "with-uuid-1"] }
+mysql_async = "0.34"
+sqlparser = "0.59"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+toml = "0.9"
+anyhow = "1.0"
+thiserror = "2.0"
+tabled = "0.16"
+chrono = { version = "0.4", features = ["serde"] }
+dirs = "6.0"
+uuid = { version = "1.11", features = ["v4", "serde"] }
+async-trait = "0.1"
+strsim = "0.11.1"
+toml_edit = "0.22"
+regex = "1.11"
+
+[dev-dependencies]
+tokio-test = "0.4"
+tempfile = "3.0"
+
+[profile.release]
+lto = true
+strip = true
+opt-level = 3
