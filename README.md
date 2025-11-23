@@ -129,12 +129,12 @@ cargo install rds-cli
 ### 설정 우선순위
 
 ```
---profile 옵션 > DB_PASSWORD_<PROFILE> 환경변수 > .rds-cli.toml > ~/.config/rds-cli/application.toml
+--profile 옵션 > DB_PASSWORD_<PROFILE> 환경변수 > .rds-cli.toml > ~/.config/rds-cli/config.toml
 ```
 
 ### 최소 설정 예제
 
-**~/.config/rds-cli/application.toml**:
+**~/.config/rds-cli/config.toml**:
 
 ```toml
 [defaults]

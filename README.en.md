@@ -129,12 +129,12 @@ cargo install rds-cli
 ### Priority Order
 
 ```
---profile option > DB_PASSWORD_<PROFILE> env > .rds-cli.toml > ~/.config/rds-cli/application.toml
+--profile option > DB_PASSWORD_<PROFILE> env > .rds-cli.toml > ~/.config/rds-cli/config.toml
 ```
 
 ### Minimal Config Example
 
-**~/.config/rds-cli/application.toml**:
+**~/.config/rds-cli/config.toml**:
 
 ```toml
 [defaults]

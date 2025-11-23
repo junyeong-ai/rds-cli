@@ -82,7 +82,6 @@ type = "postgresql"
 host = "localhost"
 port = 5432
 user = "myuser"
-password = ""
 database = "mydb"
 schema = "public"
 
@@ -95,7 +94,10 @@ allowed_operations = ["SELECT", "EXPLAIN", "SHOW"]
 
             std::fs::write(&config_path, sample_config)?;
             println!("✓ Configuration initialized at: {}", config_path.display());
-            println!("\nEdit the file to add your database profiles.");
+            println!("\nNext steps:");
+            println!("  1. Edit config:        rds-cli config edit");
+            println!("  2. Set password:       export DB_PASSWORD_LOCAL=\"your-password\"");
+            println!("  3. Refresh schema:     rds-cli refresh");
         }
         ConfigAction::Show => {
             let config = ApplicationConfig::load(None)?;

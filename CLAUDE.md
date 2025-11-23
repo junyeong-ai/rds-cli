@@ -40,7 +40,7 @@ pub fn load(cli_profile: Option<String>) -> Result<Self> {
 }
 ```
 
-**Key Decision**: `merge()` is non-destructive. Allows team to share `.rds-cli.toml` (project) while users override with `~/.config/rds-cli/application.toml`.
+**Key Decision**: `merge()` is non-destructive. Allows team to share `.rds-cli.toml` (project) while users override with `~/.config/rds-cli/config.toml`.
 
 **Password Handling**: Environment variables only (`DB_PASSWORD_<PROFILE>`). Never stored in config files.
 

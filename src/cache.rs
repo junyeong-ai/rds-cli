@@ -49,10 +49,9 @@ pub struct ForeignKeyRelationship {
 
 impl SchemaCache {
     pub fn cache_path(profile: &str) -> Result<PathBuf> {
-        let mut path = dirs::config_dir()
+        let mut path = crate::config::ApplicationConfig::config_base_dir()
             .ok_or_else(|| anyhow::anyhow!("Cannot determine config directory"))?;
 
-        path.push("rds-cli");
         path.push("cache");
         path.push(profile);
 
