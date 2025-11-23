@@ -1,290 +1,95 @@
-# RDS CLI - AI Agent Developer Guide
+# RDS CLI - AI Agent Guide
 
-This is a Rust CLI tool for safe PostgreSQL/MySQL database operations. Focus: schema caching, query validation, and team-shared named queries.
-
----
-
-## Architecture Overview
-
-### Database Trait Abstraction
-
-```rust
-#[async_trait]
-pub trait Database: Send + Sync {
-    async fn connect(&mut self, profile: &DatabaseProfile) -> Result<()>;
-    async fn extract_schema(&self, profile: &DatabaseProfile) -> Result<SchemaCache>;
-    async fn execute_query(&self, sql: &str, timeout_secs: u64) -> Result<QueryResult>;
-    fn db_type(&self) -> &str;
-}
-```
-
-**Key Decision**: Factory pattern in `src/db/mod.rs` creates `Box<dyn Database>`. Add new databases by implementing these 4 methods.
-
-**Implementations**:
-- `PostgresDatabase` (`src/db/postgres.rs`): tokio-postgres, extracts from `information_schema`
-- `MySqlDatabase` (`src/db/mysql.rs`): mysql_async Pool, uses `information_schema.COLUMNS`
+Rust CLI for safe PostgreSQL/MySQL operations. Focus: schema caching, query validation, encrypted passwords.
 
 ---
 
-### 5-Level Configuration Hierarchy
+## Architecture
 
-Priority: **CLI args > ENV vars > Project config > User config > Defaults**
+### Database Trait
 
-```rust
-pub fn load(cli_profile: Option<String>) -> Result<Self> {
-    let mut config = Self::default();
-    if user_config.exists() { config = config.merge(user_config); }
-    if project_config.exists() { config = config.merge(project_config); }
-    config.load_env_vars()?;  // DB_PASSWORD_<PROFILE> injection
-    if cli_profile.is_some() { config.defaults.default_profile = cli_profile; }
-}
-```
+Factory pattern in `src/db/mod.rs`. Add databases by implementing 4 methods: `connect`, `extract_schema`, `execute_query`, `db_type`.
 
-**Key Decision**: `merge()` is non-destructive. Allows team to share `.rds-cli.toml` (project) while users override with `~/.config/rds-cli/config.toml`.
+**Implementations**: PostgreSQL (`postgres.rs`), MySQL (`mysql.rs`)
 
-**Password Handling**: Environment variables only (`DB_PASSWORD_<PROFILE>`). Never stored in config files.
+---
+
+### Configuration Hierarchy
+
+Priority: **CLI args > Encrypted password > ENV vars > Project config > User config > Defaults**
+
+**Key Decisions**:
+- `merge()` is non-destructive
+- Encrypted passwords auto-decrypt during `load_env_vars()`
+- User config: `~/.config/rds-cli/config.toml`
+- Project config: `./.rds-cli.toml` (Git-safe with encryption)
+
+---
+
+### Encrypted Passwords
+
+**Master Key**: `~/.config/rds-cli/.master.key` (32-byte random, 0600 permissions)
+**Encryption**: ChaCha20-Poly1305, format `enc:base64(nonce || ciphertext || tag)`
+**Storage**: `.rds-cli.toml` as `password = "enc:..."`
+**Auto-decryption**: `load_env_vars()` decrypts `enc:...` passwords automatically
+**Commands**: `secret set/get/remove/reset <profile>`
+
+**Key Decision**: File-based key (not OS Keyring) for reliability
 
 ---
 
 ### Schema Caching
 
-```rust
-pub struct SchemaCache {
-    pub cached_at: DateTime<Utc>,
-    pub profile_name: String,
-    pub database_type: String,
-    pub tables: HashMap<String, TableMetadata>,
-}
-```
-
 **Location**: `~/.config/rds-cli/cache/<profile>/schema.json`
+**Format**: JSON, <5ms lookups
+**Fuzzy Search**: Levenshtein distance (strsim), max 3, top 3 suggestions
 
-**Key Decision**: JSON serialization for <5ms lookups. Avoids database roundtrips on every schema operation.
-
-**Fuzzy Search**: Levenshtein distance (via `strsim`), max distance 3, shows top 3 suggestions.
-
-**Methods**:
-- `get_table_or_error()`: Returns table or prints fuzzy suggestions
-- `suggest_tables()`: Returns `Vec<(String, usize)>` sorted by distance
+**Key Decision**: JSON serialization avoids DB roundtrips
 
 ---
 
-### Query Validation & Safety
+### Query Validation
 
-```rust
-pub fn validate(&self, sql: &str) -> Result<String> {
-    let statements = Parser::parse_sql(&*self.dialect, sql)?;
+`sqlparser` with DB dialects, auto LIMIT injection (string-based), only `SELECT` by default
 
-    // Only Statement::Query(_) allowed
-    for statement in &statements {
-        match statement {
-            Statement::Query(_) => {}
-            _ => anyhow::bail!("Only SELECT queries allowed"),
-        }
-    }
+### Named Queries
 
-    // Auto LIMIT injection if missing
-    if !self.has_limit(sql) {
-        return Ok(format!("{} LIMIT {}", sql.trim_end_matches(';'), self.policy.default_limit));
-    }
-}
-```
-
-**Key Decision**: `sqlparser` with database-specific dialects (PostgreSQL/MySQL). String-based LIMIT detection (not AST) for simplicity.
-
-**Enforcement**: Only `Statement::Query` allowed by default. Production profiles set `allowed_operations = ["SELECT"]`.
+Storage: `.rds-cli.toml`, Parameters: `:param_name` (regex), `toml_edit` for Git diffs
 
 ---
 
-### Named Queries with Parameter Detection
+## Patterns
 
-**Storage**: `.rds-cli.toml` (project-level, Git-versioned)
-
-**Key Decision**: `toml_edit` crate preserves formatting/comments. Enables clean Git diffs.
-
-```rust
-pub fn extract_params(sql: &str) -> Vec<String> {
-    let re = Regex::new(r":(\w+)").unwrap();
-    let mut params: Vec<String> = re.captures_iter(sql)
-        .filter_map(|cap| cap.get(1).map(|m| m.as_str().to_string()))
-        .collect();
-    params.sort();
-    params.dedup();
-    params
-}
-```
-
-**Parameter Syntax**: `:param_name` (named parameters). Auto-detected via regex.
-
----
-
-## Implementation Patterns
-
-### CliContext Pattern
-
-**Location**: `src/main.rs`
-
-```rust
-struct CliContext {
-    config: ApplicationConfig,
-    profile_name: String,
-}
-
-impl CliContext {
-    fn load(cli: &Cli) -> Result<Self>  // Single config loading point
-    fn get_profile(&self) -> Result<&DatabaseProfile>
-}
-```
-
-**Key Decision**: Eliminates duplicate config loading. All handlers use `CliContext::load(cli)`.
-
+**CliContext**: Single config loading point in all handlers (`CliContext::load(cli)`)
+**Error Handling**: `anyhow::Result` everywhere, no custom error types
 **Handler Pattern**: `async fn handle_*(args, cli: &Cli) -> Result<()>`
 
 ---
 
-### Error Handling
+## Adding Features
 
-**Strategy**: `anyhow::Result` everywhere. `anyhow::Context` for error chains.
-
-```rust
-Self::from_file(&path).context("Failed to read config")?
-```
-
-**Key Decision**: No custom error types. CLI tools don't need enum variants.
+**New Database**: Implement `Database` trait (4 methods), register in `src/db/mod.rs` factory
+**New Command**: Add to `Command` enum, create handler with `CliContext::load(cli)`
+**Config Field**: Add to `ApplicationConfig`, update `merge()` logic
 
 ---
 
-## Development Tasks
+## Common Issues
 
-### Add New Database
-
-1. Create `src/db/newdb.rs`:
-```rust
-pub struct NewDatabase { connection: Option<Connection> }
-
-#[async_trait]
-impl Database for NewDatabase {
-    async fn connect(&mut self, profile: &DatabaseProfile) -> Result<()> { /* */ }
-    async fn extract_schema(&self, profile: &DatabaseProfile) -> Result<SchemaCache> { /* */ }
-    async fn execute_query(&self, sql: &str, timeout_secs: u64) -> Result<QueryResult> { /* */ }
-    fn db_type(&self) -> &str { "newdb" }
-}
-```
-
-2. Register in factory (`src/db/mod.rs`):
-```rust
-pub fn create_database(db_type: &str) -> Result<Box<dyn Database>> {
-    match db_type {
-        "postgresql" => Ok(Box::new(postgres::PostgresDatabase::new())),
-        "mysql" => Ok(Box::new(mysql::MySqlDatabase::new())),
-        "newdb" => Ok(Box::new(newdb::NewDatabase::new())),
-        _ => anyhow::bail!("Unsupported database type: {}", db_type),
-    }
-}
-```
-
----
-
-### Add New Command
-
-1. `src/cli.rs`:
-```rust
-#[derive(Subcommand)]
-pub enum Command {
-    NewCommand {
-        #[arg(long)] param: String
-    },
-}
-```
-
-2. `src/main.rs`:
-```rust
-Command::NewCommand { param } => handle_new_command(&param, &cli).await?,
-
-async fn handle_new_command(param: &str, cli: &Cli) -> Result<()> {
-    let ctx = CliContext::load(cli)?;
-    let profile = ctx.get_profile()?;
-    // Use SchemaCache::load(&ctx.profile_name)?
-    // Use format::OutputFormat::from_str()?
-}
-```
-
----
-
-### Modify Configuration
-
-1. Add field to `ApplicationConfig` (`src/config.rs`)
-2. Update `merge()` logic with non-destructive override
-3. Update init template in `src/main.rs` if config file default needed
-
----
-
-## Common Issues & Fixes
-
-### Cache Not Found
-
-**Symptom**: `Cache not found for profile 'xxx'`
-
-**Cause**: `rds-cli refresh` never run
-
-**Fix**: Run `rds-cli refresh` to generate cache at `~/.config/rds-cli/cache/<profile>/schema.json`
-
----
-
-### Table Not Found Despite Existing
-
-**Cause**: Stale cache or case-sensitivity
-
-**Fix**:
-```bash
-rds-cli schema find xxx  # Check cached tables
-rds-cli refresh          # Regenerate cache
-```
-
-**Debug**: Check `SchemaCache::get_table_or_error()` shows fuzzy suggestions
-
----
-
-### Query Validation Failed
-
-**Symptom**: `Only SELECT queries allowed`
-
-**Cause**: Safety policy blocking non-SELECT
-
-**Fix**: Modify profile's `allowed_operations`:
-```toml
-[profiles.dev.safety]
-allowed_operations = ["SELECT", "INSERT", "UPDATE", "DELETE"]
-```
-
-**Production**: Keep `["SELECT"]` only
-
----
-
-### Connection Failed
-
-**Checklist**:
-1. Database running: `psql` or `mysql` test
-2. Config correct: `rds-cli config show`
-3. Password set: `echo $DB_PASSWORD_<PROFILE>`
-4. Network/firewall
-
-**Debug**: `rds-cli --verbose query "SELECT 1"`
-
----
-
-### CliContext Pattern Not Used
-
-**Symptom**: Duplicate `ApplicationConfig::load()` calls
-
-**Fix**: Use `CliContext::load(cli)?` in all handlers
+**Cache Not Found**: Run `rds-cli refresh`
+**Query Validation Failed**: Modify `allowed_operations` in profile safety config
+**Connection Failed**: Check `rds-cli secret get <profile>`, run `--verbose` flag
+**Decryption Failed**: `rds-cli secret reset` then re-set passwords
+**Master Key Lost**: Same as decryption failed (key is per-user, not shared)
 
 ---
 
 ## Key Files
 
-- `src/main.rs`: CLI handlers, CliContext pattern
-- `src/config.rs`: 5-level hierarchy, merge logic, env var loading
+- `src/main.rs`: CLI handlers, CliContext pattern, secret handler
+- `src/config.rs`: 5-level hierarchy, merge logic, encrypted password auto-decryption
+- `src/crypto.rs`: ChaCha20-Poly1305 encryption/decryption
+- `src/secret.rs`: Master key management (file-based storage)
 - `src/cache.rs`: Schema caching, fuzzy search
 - `src/validator.rs`: SQL parsing, LIMIT injection
 - `src/query_manager.rs`: Named queries, parameter extraction, toml_edit
@@ -298,13 +103,8 @@ allowed_operations = ["SELECT", "INSERT", "UPDATE", "DELETE"]
 ## Performance
 
 **Binary**: 6.7MB (LTO + strip)
-
-**Bottlenecks**:
-- Schema cache: <5ms (JSON deserialization)
-- SQL validation: <1ms (sqlparser)
-- Query execution: Database I/O dependent
-
-**Config**: `Cargo.toml` release profile uses `lto = true`, `strip = true`, `opt-level = 3`
+**Cache**: <5ms, **Validation**: <1ms
+**Release**: `lto = true`, `strip = true`, `opt-level = 3`
 
 ---
 

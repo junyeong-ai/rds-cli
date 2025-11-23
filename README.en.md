@@ -18,17 +18,13 @@
 
 ---
 
-## Why RDS CLI?
+## Key Features
 
-Traditional DB clients are **slow**, **dangerous**, and **hard to collaborate**.
-
-| Traditional | RDS CLI |
-|------------|---------|
-| 🐌 Schema lookup every time (100ms+) | ⚡ Cached <5ms lookup |
-| ❌ Accidental full table scan | ✅ Auto LIMIT applied |
-| 🔓 DELETE possible in production | 🔒 Read-only enforced |
-| 📋 Copy-paste complex queries | 📝 Team-shared Named Queries |
-| 🤷 "Table not found" on typo | 🔍 Fuzzy search suggestions |
+- **Fast Schema Lookup**: Cached <5ms
+- **Safe Queries**: Auto LIMIT, read-only mode
+- **Team Collaboration**: Git-versioned Named Queries
+- **Encrypted Passwords**: Git safe, no environment variables
+- **Smart Search**: Fuzzy matching, auto suggestions
 
 ---
 
@@ -42,11 +38,14 @@ curl -fsSL https://raw.githubusercontent.com/junyeong-ai/rds-cli/main/scripts/in
 rds-cli config init
 rds-cli config edit  # Enter DB credentials
 
-# 3. Cache schema
-export DB_PASSWORD_LOCAL="your-password"
+# 3. Set password (encrypted)
+rds-cli secret set local
+# Password for profile 'local': ********
+
+# 4. Cache schema
 rds-cli refresh
 
-# 4. Start using!
+# 5. Start using!
 rds-cli schema find user
 rds-cli query "SELECT * FROM users"
 ```
@@ -78,7 +77,17 @@ rds-cli --profile prod query "DELETE FROM users"
 # → ERROR: Only SELECT queries allowed
 ```
 
-### 3. Named Queries for Team Collaboration
+### 3. Encrypted Password Management
+
+```bash
+# Set password (encrypted in .rds-cli.toml)
+rds-cli secret set production
+
+# Automation
+echo "password" | rds-cli secret set production --password-stdin
+```
+
+### 4. Named Queries for Team Collaboration
 
 ```bash
 # Save to .rds-cli.toml (Git-shared)
@@ -93,7 +102,7 @@ rds-cli saved save find_user "SELECT * FROM users WHERE email = :email"
 rds-cli run find_user --param email=test@example.com
 ```
 
-### 4. Multiple Output Formats
+### 5. Multiple Output Formats
 
 ```bash
 # JSON (jq pipeline)
@@ -129,7 +138,7 @@ cargo install rds-cli
 ### Priority Order
 
 ```
---profile option > DB_PASSWORD_<PROFILE> env > .rds-cli.toml > ~/.config/rds-cli/config.toml
+--profile option > Encrypted password (enc:...) > Environment variable (DB_PASSWORD_<PROFILE>) > .rds-cli.toml > ~/.config/rds-cli/config.toml
 ```
 
 ### Minimal Config Example
@@ -152,11 +161,17 @@ default_limit = 1000
 allowed_operations = ["SELECT"]
 ```
 
-**Use environment variables for passwords**:
+### Password Management
 
+**Recommended: Encrypted Storage**
+```bash
+rds-cli secret set local
+# Encrypted in .rds-cli.toml (Git safe)
+```
+
+**Optional: Environment Variable**
 ```bash
 export DB_PASSWORD_LOCAL="secret"
-export DB_PASSWORD_PRODUCTION="prod-secret"
 ```
 
 **Team-shared queries** (./.rds-cli.toml, Git-committed):
@@ -173,43 +188,18 @@ description = "Last 7 days order statistics"
 rds-cli config init   # Create config file
 rds-cli config edit   # Edit with $EDITOR
 rds-cli config show   # Show current config
+rds-cli config path   # Print config file path
 ```
 
 ---
 
-## 💡 Practical Usage
+## Production Configuration
 
-### Production Safety Pattern
-
-```bash
-# Production: read-only + low LIMIT
+```toml
 [profiles.production.safety]
 default_limit = 100
 max_limit = 1000
-allowed_operations = ["SELECT"]
-
-# Development: flexible
-[profiles.dev.safety]
-default_limit = 10000
-allowed_operations = ["SELECT", "INSERT", "UPDATE", "DELETE"]
-```
-
-### Fuzzy Search Usage
-
-```bash
-rds-cli schema show user
-# ❌ Table 'user' not found
-# Did you mean: users, user_roles, user_sessions?
-```
-
-### jq Pipeline
-
-```bash
-# Extract primary key
-rds-cli --format json schema show users | jq '.columns[] | select(.is_primary_key)'
-
-# Table names only
-rds-cli --format json schema find order | jq '.tables[].name'
+allowed_operations = ["SELECT"]  # Read-only
 ```
 
 ---
@@ -224,37 +214,29 @@ rds-cli --format json schema find order | jq '.tables[].name'
 | `query <sql>` | Execute query |
 | `run <name> [--param k=v]` | Run named query |
 | `saved [save\|delete\|show]` | Manage queries |
+| `secret set <profile>` | Store encrypted password |
+| `secret get <profile>` | Decrypt and print password |
+| `secret remove <profile>` | Remove password |
+| `secret reset` | Reset master key |
 | `refresh` | Refresh schema cache |
-| `config [init\|edit\|show]` | Manage configuration |
+| `config [init\|edit\|show\|path]` | Manage configuration |
 
-**Common options**: `--profile <name>`, `--format <json|csv|table>`, `--verbose`
+**Options**: `--profile <name>`, `--format <json|csv|table>`, `--verbose`
 
 ---
 
-## 🛠️ Troubleshooting
-
-### "Cache not found" Error
+## Troubleshooting
 
 ```bash
+# Cache not found
 rds-cli refresh
-```
 
-### "Table not found" Error
+# Connection failed
+rds-cli secret get <profile>
 
-```bash
-rds-cli schema find <pattern>  # Check table name
-rds-cli refresh                # Refresh cache
-```
-
-### "Failed to connect" Error
-
-```bash
-# Check password environment variable
-echo $DB_PASSWORD_<PROFILE>
-
-# Test connection
-psql -h localhost -U myuser -d mydb  # PostgreSQL
-mysql -h localhost -u myuser -p mydb # MySQL
+# Master key lost
+rds-cli secret reset
+rds-cli secret set <profile>
 ```
 
 ---

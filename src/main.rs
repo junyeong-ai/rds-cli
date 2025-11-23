@@ -462,6 +462,12 @@ async fn handle_secret(action: &SecretAction) -> Result<()> {
 
             println!("✓ Password removed for profile '{}'", profile);
         }
+        SecretAction::Reset => {
+            secret_mgr.reset_master_key()?;
+            println!("✓ Master key reset successfully");
+            println!("⚠️  All encrypted passwords are now unrecoverable");
+            println!("   Use 'rds-cli secret set <profile>' to re-encrypt passwords");
+        }
     }
 
     Ok(())

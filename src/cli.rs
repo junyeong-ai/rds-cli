@@ -99,4 +99,5 @@ pub enum SecretAction {
     Remove {
         profile: String,
     },
+    Reset,
 }
