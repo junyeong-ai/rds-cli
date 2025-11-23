@@ -51,7 +51,10 @@ pub enum Command {
 pub enum ConfigAction {
     Init,
     Show,
-    Path,
+    Path {
+        #[arg(long, help = "Show global config path instead of project config")]
+        global: bool,
+    },
     Edit,
 }
 

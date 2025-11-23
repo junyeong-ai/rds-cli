@@ -40,6 +40,10 @@ impl SecretManager {
             let key = crypto::generate_key();
             let encoded = BASE64.encode(key);
 
+            if let Some(parent) = key_path.parent() {
+                fs::create_dir_all(parent).context("Failed to create config directory")?;
+            }
+
             fs::write(&key_path, encoded).context("Failed to store master key")?;
 
             #[cfg(unix)]
@@ -66,6 +70,7 @@ impl SecretManager {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::fs;
 
     #[test]
     fn test_master_key_persistence() {

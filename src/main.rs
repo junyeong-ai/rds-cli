@@ -111,11 +111,16 @@ allowed_operations = ["SELECT", "EXPLAIN", "SHOW"]
                 );
             }
         }
-        ConfigAction::Path => {
-            if let Some(path) = ApplicationConfig::project_config_path() {
-                println!("{}", path.display());
-            } else if let Some(path) = ApplicationConfig::user_config_path() {
-                println!("{}", path.display());
+        ConfigAction::Path { global } => {
+            let path = if *global {
+                ApplicationConfig::user_config_path()
+            } else {
+                ApplicationConfig::project_config_path()
+                    .or_else(ApplicationConfig::user_config_path)
+            };
+
+            if let Some(p) = path {
+                println!("{}", p.display());
             } else {
                 anyhow::bail!("No config file found");
             }
