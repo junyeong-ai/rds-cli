@@ -399,12 +399,19 @@ async fn handle_secret(action: &SecretAction) -> Result<()> {
     let crypto = Crypto::new(&master_key);
 
     match action {
-        SecretAction::Set { profile } => {
+        SecretAction::Set { profile, password_stdin } => {
             let config_path = ApplicationConfig::project_config_path()
                 .context("No project config found (.rds-cli.toml)")?;
 
-            let password = rpassword::prompt_password(format!("Password for profile '{}': ", profile))
-                .context("Failed to read password")?;
+            let password = if *password_stdin {
+                use std::io::{self, Read};
+                let mut buffer = String::new();
+                io::stdin().read_to_string(&mut buffer)?;
+                buffer.trim().to_string()
+            } else {
+                rpassword::prompt_password(format!("Password for profile '{}': ", profile))
+                    .context("Failed to read password")?
+            };
 
             let encrypted = crypto.encrypt(&password)?;
 

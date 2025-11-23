@@ -90,6 +90,8 @@ pub enum SavedAction {
 pub enum SecretAction {
     Set {
         profile: String,
+        #[arg(long)]
+        password_stdin: bool,
     },
     Get {
         profile: String,
