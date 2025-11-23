@@ -70,7 +70,6 @@ impl SecretManager {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::fs;
 
     #[test]
     fn test_master_key_persistence() {
