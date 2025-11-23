@@ -286,8 +286,9 @@ main() {
     echo ""
     echo "1. Initialize config:   $BINARY_NAME config init"
     echo "2. Edit credentials:    $BINARY_NAME config edit"
-    echo "3. Refresh schema:      $BINARY_NAME refresh"
-    echo "4. Try a query:         $BINARY_NAME query \"SELECT 1\""
+    echo "3. Set password:        $BINARY_NAME secret set <profile>"
+    echo "4. Refresh schema:      $BINARY_NAME refresh"
+    echo "5. Try a query:         $BINARY_NAME query \"SELECT 1\""
     echo ""
 }
 

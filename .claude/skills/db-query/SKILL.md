@@ -98,15 +98,19 @@ rds-cli --format json run find_user --param email=user@example.com
 
 ## Configuration
 
-**Priority**: CLI args > ENV vars > Project config > User config > Defaults
+**Priority**: CLI args > Encrypted password > ENV vars > Project config > User config
 
-**Password**: Use environment variables only
+**Password** (encrypted, Git-safe):
 ```bash
-export DB_PASSWORD_LOCAL="secret"
-export DB_PASSWORD_PRODUCTION="prod-secret"
+rds-cli secret set <profile>
 ```
 
-**View config**: `rds-cli config show`
+**Fallback** (environment variable):
+```bash
+export DB_PASSWORD_<PROFILE>="secret"
+```
+
+**View**: `rds-cli config show`
 
 ---
 
