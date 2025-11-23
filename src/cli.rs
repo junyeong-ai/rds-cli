@@ -41,6 +41,10 @@ pub enum Command {
         #[arg(long)]
         verbose: bool,
     },
+    Secret {
+        #[command(subcommand)]
+        action: SecretAction,
+    },
 }
 
 #[derive(Subcommand)]
@@ -79,5 +83,18 @@ pub enum SavedAction {
     },
     Show {
         name: String,
+    },
+}
+
+#[derive(Subcommand)]
+pub enum SecretAction {
+    Set {
+        profile: String,
+    },
+    Get {
+        profile: String,
+    },
+    Remove {
+        profile: String,
     },
 }

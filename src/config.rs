@@ -139,7 +139,7 @@ impl ApplicationConfig {
         })
     }
 
-    fn from_file(path: &PathBuf) -> Result<Self> {
+    pub fn from_file(path: &PathBuf) -> Result<Self> {
         let content = std::fs::read_to_string(path)
             .with_context(|| format!("Failed to read config: {}", path.display()))?;
 
@@ -172,10 +172,29 @@ impl ApplicationConfig {
     }
 
     fn load_env_vars(&mut self) -> Result<()> {
+        use crate::crypto::Crypto;
+        use crate::secret::SecretManager;
+
+        let decrypt = || -> Result<Crypto> {
+            let secret_mgr = SecretManager::new()?;
+            let master_key = secret_mgr.get_or_create_master_key()?;
+            Ok(Crypto::new(&master_key))
+        };
+
+        let crypto = decrypt().ok();
+
         for (profile_name, profile) in &mut self.profiles {
-            let env_var = format!("DB_PASSWORD_{}", profile_name.to_uppercase());
-            if let Ok(password) = std::env::var(&env_var) {
-                profile.password = password;
+            if profile.password.starts_with("enc:") {
+                if let Some(ref c) = crypto {
+                    if let Ok(decrypted) = c.decrypt(&profile.password) {
+                        profile.password = decrypted;
+                    }
+                }
+            } else {
+                let env_var = format!("DB_PASSWORD_{}", profile_name.to_uppercase());
+                if let Ok(password) = std::env::var(&env_var) {
+                    profile.password = password;
+                }
             }
         }
         Ok(())

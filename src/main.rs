@@ -2,11 +2,13 @@ use anyhow::{Context, Result};
 use clap::Parser;
 
 use rds_cli::cache::SchemaCache;
-use rds_cli::cli::{Cli, Command, ConfigAction, SavedAction, SchemaAction};
+use rds_cli::cli::{Cli, Command, ConfigAction, SavedAction, SchemaAction, SecretAction};
 use rds_cli::config::{ApplicationConfig, DatabaseProfile};
+use rds_cli::crypto::Crypto;
 use rds_cli::db;
 use rds_cli::format;
 use rds_cli::query_manager::QueryManager;
+use rds_cli::secret::SecretManager;
 use rds_cli::validator::QueryValidator;
 
 struct CliContext {
@@ -56,6 +58,9 @@ async fn main() -> Result<()> {
         }
         Command::Saved { action, verbose } => {
             handle_saved(action.as_ref(), *verbose, &cli).await?;
+        }
+        Command::Secret { action } => {
+            handle_secret(action).await?;
         }
     }
 
@@ -385,6 +390,72 @@ async fn handle_saved(action: Option<&SavedAction>, verbose: bool, cli: &Cli) ->
     };
 
     println!("{}", output);
+
+    Ok(())
+}
+async fn handle_secret(action: &SecretAction) -> Result<()> {
+    let secret_mgr = SecretManager::new()?;
+    let master_key = secret_mgr.get_or_create_master_key()?;
+    let crypto = Crypto::new(&master_key);
+
+    match action {
+        SecretAction::Set { profile } => {
+            let config_path = ApplicationConfig::project_config_path()
+                .context("No project config found (.rds-cli.toml)")?;
+
+            let password = rpassword::prompt_password(format!("Password for profile '{}': ", profile))
+                .context("Failed to read password")?;
+
+            let encrypted = crypto.encrypt(&password)?;
+
+            let mut config = if config_path.exists() {
+                ApplicationConfig::from_file(&config_path)?
+            } else {
+                ApplicationConfig::default()
+            };
+
+            if let Some(profile_config) = config.profiles.get_mut(profile) {
+                profile_config.password = encrypted;
+            } else {
+                anyhow::bail!("Profile '{}' not found in .rds-cli.toml", profile);
+            }
+
+            let content = toml::to_string_pretty(&config)?;
+            std::fs::write(&config_path, content)?;
+
+            println!("✓ Encrypted password set for profile '{}'", profile);
+        }
+        SecretAction::Get { profile } => {
+            let config = ApplicationConfig::load(None)?;
+            let profile_config = config.get_profile(profile)?;
+
+            if profile_config.password.starts_with("enc:") {
+                let decrypted = crypto.decrypt(&profile_config.password)?;
+                println!("{}", decrypted);
+            } else if !profile_config.password.is_empty() {
+                println!("{}", profile_config.password);
+            } else {
+                println!("(empty)");
+            }
+        }
+        SecretAction::Remove { profile } => {
+            let config_path = ApplicationConfig::project_config_path()
+                .context("No project config found (.rds-cli.toml)")?;
+
+            let mut config = ApplicationConfig::from_file(&config_path)?;
+
+            if let Some(profile_config) = config.profiles.get_mut(profile) {
+                profile_config.password = String::new();
+            } else {
+                anyhow::bail!("Profile '{}' not found", profile);
+            }
+
+            let content = toml::to_string_pretty(&config)?;
+            std::fs::write(&config_path, content)?;
+
+            println!("✓ Password removed for profile '{}'", profile);
+        }
+    }
 
     Ok(())
 }
