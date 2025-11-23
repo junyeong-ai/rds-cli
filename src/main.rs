@@ -122,7 +122,7 @@ allowed_operations = ["SELECT", "EXPLAIN", "SHOW"]
         }
         ConfigAction::Edit => {
             let config_path = ApplicationConfig::project_config_path()
-                .or_else(|| ApplicationConfig::user_config_path())
+                .or_else(ApplicationConfig::user_config_path)
                 .ok_or_else(|| anyhow::anyhow!("No config file found"))?;
 
             if !config_path.exists() {

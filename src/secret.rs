@@ -39,7 +39,7 @@ impl SecretManager {
             Ok(key)
         } else {
             let key = crypto::generate_key();
-            let encoded = BASE64.encode(&key);
+            let encoded = BASE64.encode(key);
 
             fs::write(&key_path, encoded)
                 .context("Failed to store master key")?;
