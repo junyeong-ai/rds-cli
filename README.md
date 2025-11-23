@@ -31,21 +31,19 @@
 ## ⚡ 빠른 시작
 
 ```bash
-# 1. 설치 (1줄)
+# 1. 설치 (전역 설정 자동 생성)
 curl -fsSL https://raw.githubusercontent.com/junyeong-ai/rds-cli/main/scripts/install.sh | bash
 
-# 2. 설정 (1분)
-rds-cli config init
-rds-cli config edit  # DB 정보 입력
+# 2. 프로젝트 설정
+cd your-project
+rds-cli config init     # .rds-cli.toml 생성
+rds-cli config edit     # DB 정보 입력
 
 # 3. 비밀번호 설정 (암호화)
 rds-cli secret set local
-# Password for profile 'local': ********
 
-# 4. 스키마 캐싱
+# 4. 스키마 캐싱 및 사용
 rds-cli refresh
-
-# 5. 사용 시작!
 rds-cli schema find user
 rds-cli query "SELECT * FROM users"
 ```
@@ -135,20 +133,18 @@ cargo install rds-cli
 
 ## ⚙️ 설정
 
-### 설정 우선순위
+### 설정 구조
 
-```
---profile 옵션 > 암호화된 비밀번호 (enc:...) > 환경변수 (DB_PASSWORD_<PROFILE>) > .rds-cli.toml > ~/.config/rds-cli/config.toml
-```
-
-### 최소 설정 예제
-
-**~/.config/rds-cli/config.toml**:
-
+**전역 설정** (`~/.config/rds-cli/config.toml`, 설치 시 자동 생성):
 ```toml
 [defaults]
 default_profile = "local"
+cache_ttl_hours = 24
+output_format = "table"
+```
 
+**프로젝트 설정** (`.rds-cli.toml`, `config init`으로 생성):
+```toml
 [profiles.local]
 type = "postgresql"
 host = "localhost"
@@ -160,6 +156,8 @@ database = "mydb"
 default_limit = 1000
 allowed_operations = ["SELECT"]
 ```
+
+**우선순위**: CLI args > 암호화 비밀번호 > 환경변수 > 프로젝트 설정 > 전역 설정
 
 ### 비밀번호 관리
 

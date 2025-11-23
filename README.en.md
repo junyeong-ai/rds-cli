@@ -31,21 +31,19 @@
 ## ⚡ Quick Start
 
 ```bash
-# 1. Install (one-liner)
+# 1. Install (auto-creates global config)
 curl -fsSL https://raw.githubusercontent.com/junyeong-ai/rds-cli/main/scripts/install.sh | bash
 
-# 2. Configure (1 minute)
-rds-cli config init
-rds-cli config edit  # Enter DB credentials
+# 2. Project setup
+cd your-project
+rds-cli config init     # Creates .rds-cli.toml
+rds-cli config edit     # Enter DB credentials
 
 # 3. Set password (encrypted)
 rds-cli secret set local
-# Password for profile 'local': ********
 
-# 4. Cache schema
+# 4. Cache schema and use
 rds-cli refresh
-
-# 5. Start using!
 rds-cli schema find user
 rds-cli query "SELECT * FROM users"
 ```
@@ -135,20 +133,18 @@ cargo install rds-cli
 
 ## ⚙️ Configuration
 
-### Priority Order
+### Configuration Structure
 
-```
---profile option > Encrypted password (enc:...) > Environment variable (DB_PASSWORD_<PROFILE>) > .rds-cli.toml > ~/.config/rds-cli/config.toml
-```
-
-### Minimal Config Example
-
-**~/.config/rds-cli/config.toml**:
-
+**Global config** (`~/.config/rds-cli/config.toml`, auto-created on install):
 ```toml
 [defaults]
 default_profile = "local"
+cache_ttl_hours = 24
+output_format = "table"
+```
 
+**Project config** (`.rds-cli.toml`, created by `config init`):
+```toml
 [profiles.local]
 type = "postgresql"
 host = "localhost"
@@ -160,6 +156,8 @@ database = "mydb"
 default_limit = 1000
 allowed_operations = ["SELECT"]
 ```
+
+**Priority**: CLI args > Encrypted password > Environment variable > Project config > Global config
 
 ### Password Management
 

@@ -70,19 +70,13 @@ async fn main() -> Result<()> {
 async fn handle_config(action: &ConfigAction) -> Result<()> {
     match action {
         ConfigAction::Init => {
-            let config_path = ApplicationConfig::user_config_path()
-                .ok_or_else(|| anyhow::anyhow!("Cannot determine config directory"))?;
+            let config_path = std::env::current_dir()?.join(".rds-cli.toml");
 
-            if let Some(parent) = config_path.parent() {
-                std::fs::create_dir_all(parent)?;
+            if config_path.exists() {
+                anyhow::bail!("Config already exists: {}", config_path.display());
             }
 
-            let sample_config = r#"[defaults]
-default_profile = "local"
-cache_ttl_hours = 24
-output_format = "table"
-
-[profiles.local]
+            let sample_config = r#"[profiles.local]
 type = "postgresql"
 host = "localhost"
 port = 5432
@@ -98,10 +92,10 @@ allowed_operations = ["SELECT", "EXPLAIN", "SHOW"]
 "#;
 
             std::fs::write(&config_path, sample_config)?;
-            println!("✓ Configuration initialized at: {}", config_path.display());
+            println!("✓ Project config created: {}", config_path.display());
             println!("\nNext steps:");
             println!("  1. Edit config:        rds-cli config edit");
-            println!("  2. Set password:       export DB_PASSWORD_LOCAL=\"your-password\"");
+            println!("  2. Set password:       rds-cli secret set local");
             println!("  3. Refresh schema:     rds-cli refresh");
         }
         ConfigAction::Show => {
@@ -118,13 +112,22 @@ allowed_operations = ["SELECT", "EXPLAIN", "SHOW"]
             }
         }
         ConfigAction::Path => {
-            if let Some(path) = ApplicationConfig::user_config_path() {
+            if let Some(path) = ApplicationConfig::project_config_path() {
                 println!("{}", path.display());
+            } else if let Some(path) = ApplicationConfig::user_config_path() {
+                println!("{}", path.display());
+            } else {
+                anyhow::bail!("No config file found");
             }
         }
         ConfigAction::Edit => {
-            let config_path = ApplicationConfig::user_config_path()
-                .ok_or_else(|| anyhow::anyhow!("Cannot determine config directory"))?;
+            let config_path = ApplicationConfig::project_config_path()
+                .or_else(|| ApplicationConfig::user_config_path())
+                .ok_or_else(|| anyhow::anyhow!("No config file found"))?;
+
+            if !config_path.exists() {
+                anyhow::bail!("Config not found. Run 'rds-cli config init' first");
+            }
 
             let editor = std::env::var("EDITOR").unwrap_or_else(|_| "vim".to_string());
             std::process::Command::new(editor)

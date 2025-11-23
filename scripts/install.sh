@@ -85,6 +85,27 @@ install_binary() {
     echo "✅ Installed to $INSTALL_DIR/$BINARY_NAME"
 }
 
+create_global_config() {
+    local config_dir="${XDG_CONFIG_HOME:-$HOME/.config}/rds-cli"
+    local config_file="$config_dir/config.toml"
+
+    if [ -f "$config_file" ]; then
+        echo "⏭️  Global config already exists: $config_file"
+        return 0
+    fi
+
+    mkdir -p "$config_dir"
+
+    cat > "$config_file" << 'EOF'
+[defaults]
+default_profile = "local"
+cache_ttl_hours = 24
+output_format = "table"
+EOF
+
+    echo "✅ Created global config: $config_file"
+}
+
 get_skill_version() {
     local skill_md="$1"
     [ -f "$skill_md" ] && grep "^version:" "$skill_md" 2>/dev/null | sed 's/version: *//' || echo "unknown"
@@ -259,6 +280,9 @@ main() {
     install_binary "$binary_path"
 
     echo ""
+    create_global_config
+
+    echo ""
     if echo "$PATH" | grep -q "$INSTALL_DIR"; then
         echo "✅ $INSTALL_DIR is in PATH"
     else
@@ -284,11 +308,12 @@ main() {
     echo ""
     echo "Next steps:"
     echo ""
-    echo "1. Initialize config:   $BINARY_NAME config init"
-    echo "2. Edit credentials:    $BINARY_NAME config edit"
-    echo "3. Set password:        $BINARY_NAME secret set <profile>"
-    echo "4. Refresh schema:      $BINARY_NAME refresh"
-    echo "5. Try a query:         $BINARY_NAME query \"SELECT 1\""
+    echo "1. Go to project:       cd <your-project>"
+    echo "2. Init project config: $BINARY_NAME config init"
+    echo "3. Edit credentials:    $BINARY_NAME config edit"
+    echo "4. Set password:        $BINARY_NAME secret set <profile>"
+    echo "5. Refresh schema:      $BINARY_NAME refresh"
+    echo "6. Try a query:         $BINARY_NAME query \"SELECT 1\""
     echo ""
 }
 
