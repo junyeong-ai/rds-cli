@@ -1,5 +1,5 @@
 use anyhow::{Context, Result};
-use base64::{engine::general_purpose::STANDARD as BASE64, Engine};
+use base64::{Engine, engine::general_purpose::STANDARD as BASE64};
 use std::fs;
 use std::path::PathBuf;
 
@@ -23,8 +23,7 @@ impl SecretManager {
         let key_path = Self::key_file_path()?;
 
         if key_path.exists() {
-            let encoded = fs::read_to_string(&key_path)
-                .context("Failed to read master key")?;
+            let encoded = fs::read_to_string(&key_path).context("Failed to read master key")?;
 
             let decoded = BASE64
                 .decode(encoded.trim())
@@ -41,8 +40,7 @@ impl SecretManager {
             let key = crypto::generate_key();
             let encoded = BASE64.encode(key);
 
-            fs::write(&key_path, encoded)
-                .context("Failed to store master key")?;
+            fs::write(&key_path, encoded).context("Failed to store master key")?;
 
             #[cfg(unix)]
             {
@@ -59,8 +57,7 @@ impl SecretManager {
     pub fn reset_master_key(&self) -> Result<()> {
         let key_path = Self::key_file_path()?;
         if key_path.exists() {
-            fs::remove_file(&key_path)
-                .context("Failed to delete master key")?;
+            fs::remove_file(&key_path).context("Failed to delete master key")?;
         }
         Ok(())
     }

@@ -402,7 +402,10 @@ async fn handle_secret(action: &SecretAction) -> Result<()> {
     let crypto = Crypto::new(&master_key);
 
     match action {
-        SecretAction::Set { profile, password_stdin } => {
+        SecretAction::Set {
+            profile,
+            password_stdin,
+        } => {
             let config_path = ApplicationConfig::project_config_path()
                 .context("No project config found (.rds-cli.toml)")?;
 

@@ -186,9 +186,10 @@ impl ApplicationConfig {
         for (profile_name, profile) in &mut self.profiles {
             if profile.password.starts_with("enc:") {
                 if let Some(ref c) = crypto
-                    && let Ok(decrypted) = c.decrypt(&profile.password) {
-                        profile.password = decrypted;
-                    }
+                    && let Ok(decrypted) = c.decrypt(&profile.password)
+                {
+                    profile.password = decrypted;
+                }
             } else {
                 let env_var = format!("DB_PASSWORD_{}", profile_name.to_uppercase());
                 if let Ok(password) = std::env::var(&env_var) {
