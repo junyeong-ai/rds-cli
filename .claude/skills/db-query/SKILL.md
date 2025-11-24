@@ -22,16 +22,34 @@ rds-cli schema find order --profile prod
 
 ---
 
+## Profile Selection
+
+**Default**: Uses `default_profile: "local"` from config if `--profile` not specified.
+
+**When to specify**:
+- User mentions environment: "production", "staging", "dev" → Use `--profile <env>`
+- User says "DB" without context → Clarify or use default
+
+```bash
+# Specific environment
+rds-cli --profile prod --format json query "SELECT COUNT(*) FROM orders"
+
+# Default (uses "local" or configured default_profile)
+rds-cli --format json query "SELECT COUNT(*) FROM users"
+```
+
+---
+
 ## Quick Reference
 
 ### Schema Exploration
 
 ```bash
-# Find tables
+# Find tables (default profile)
 rds-cli --format json schema find user
 
-# Table details
-rds-cli --format json schema show users
+# Production environment
+rds-cli --profile prod --format json schema show orders
 
 # Relationships
 rds-cli schema relationships orders
@@ -40,11 +58,14 @@ rds-cli schema relationships orders
 ### Execute Queries
 
 ```bash
-# Ad-hoc query
+# Ad-hoc query (default)
 rds-cli --format json query "SELECT * FROM users WHERE status = 'active'"
 
-# Named query
-rds-cli --format json run order_stats
+# Production query
+rds-cli --profile prod --format json query "SELECT * FROM orders WHERE created_at > NOW() - INTERVAL '1 day'"
+
+# Named query with profile
+rds-cli --profile staging --format json run order_stats
 rds-cli --format json run search_user --param email=test@example.com
 ```
 
@@ -65,10 +86,11 @@ rds-cli saved delete old_query
 
 ## AI Agent Workflow
 
-1. **Explore schema**: `rds-cli --format json schema find <keyword>`
-2. **Inspect table**: `rds-cli --format json schema show <table>`
-3. **Execute query**: `rds-cli --format json query "<sql>"` or `run <name>`
-4. **Parse JSON**: All output is jq-compatible
+1. **Determine profile**: Check if user mentioned environment (prod/staging/dev)
+2. **Explore schema**: `rds-cli [--profile <env>] --format json schema find <keyword>`
+3. **Inspect table**: `rds-cli [--profile <env>] --format json schema show <table>`
+4. **Execute query**: `rds-cli [--profile <env>] --format json query "<sql>"` or `run <name>`
+5. **Parse JSON**: All output is jq-compatible
 
 ---
 
@@ -102,24 +124,25 @@ rds-cli --format json run find_user --param email=user@example.com
 
 **Password** (encrypted, Git-safe):
 ```bash
-rds-cli secret set <profile>
+rds-cli secret set local
+rds-cli secret set prod
 ```
 
 **Fallback** (environment variable):
 ```bash
-export DB_PASSWORD_<PROFILE>="secret"
+export DB_PASSWORD_LOCAL="secret"
+export DB_PASSWORD_PROD="secret"
 ```
-
-**View**: `rds-cli config show`
 
 ---
 
 ## Typical Pattern
 
+### Example 1: Default Environment
 ```bash
 # User asks: "How many active users?"
 
-# 1. Find user tables
+# 1. Find user tables (uses default profile)
 rds-cli --format json schema find user
 
 # 2. Check structure
@@ -131,6 +154,18 @@ rds-cli --format json query "SELECT COUNT(*) FROM users WHERE status = 'active'"
 # 4. Return result to user
 ```
 
----
+### Example 2: Specific Environment
+```bash
+# User asks: "How many production orders today?"
 
-**Detailed reference**: See [reference.md](reference.md) and [examples.md](examples.md)
+# 1. Find tables (production DB)
+rds-cli --profile prod --format json schema find order
+
+# 2. Check structure
+rds-cli --profile prod --format json schema show orders | jq '.columns[] | select(.name | contains("created"))'
+
+# 3. Query with profile
+rds-cli --profile prod --format json query "SELECT COUNT(*) FROM orders WHERE DATE(created_at) = CURRENT_DATE"
+
+# 4. Return result to user
+```
