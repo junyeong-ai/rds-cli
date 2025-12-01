@@ -259,10 +259,11 @@ impl Database for PostgresDatabase {
             })
             .collect();
 
+        let rows_affected = result_rows.len();
         Ok(QueryResult {
-            rows: result_rows.clone(),
+            rows: result_rows,
             columns,
-            rows_affected: result_rows.len(),
+            rows_affected,
         })
     }
 
