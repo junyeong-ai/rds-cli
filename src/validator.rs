@@ -28,6 +28,11 @@ impl QueryValidator {
             anyhow::bail!("No SQL statement provided");
         }
 
+        // Reject multiple statements for security
+        if statements.len() > 1 {
+            anyhow::bail!("Multiple statements not allowed. Execute one statement at a time.");
+        }
+
         for statement in &statements {
             self.validate_statement_type(statement)?;
         }
@@ -297,5 +302,18 @@ mod tests {
 
         assert!(validator.validate("SELECT * FROM users").is_ok());
         assert!(validator.validate("select * from users").is_ok());
+    }
+
+    #[test]
+    fn test_validate_rejects_multiple_statements() {
+        let validator = QueryValidator::new(create_test_policy(), "postgresql");
+        let result = validator.validate("SELECT 1; SELECT 2");
+        assert!(result.is_err());
+        assert!(
+            result
+                .unwrap_err()
+                .to_string()
+                .contains("Multiple statements not allowed")
+        );
     }
 }
