@@ -2,7 +2,11 @@ use anyhow::{Context, Result};
 use regex::Regex;
 use std::fs;
 use std::path::PathBuf;
+use std::sync::LazyLock;
 use toml_edit::{DocumentMut, Item, Table};
+
+static PARAM_REGEX: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r":(\w+)").expect("Invalid regex pattern"));
 
 pub struct QueryManager {
     config_path: PathBuf,
@@ -125,8 +129,7 @@ impl QueryManager {
     }
 
     pub fn extract_params(sql: &str) -> Vec<String> {
-        let re = Regex::new(r":(\w+)").unwrap();
-        let mut params: Vec<String> = re
+        let mut params: Vec<String> = PARAM_REGEX
             .captures_iter(sql)
             .filter_map(|cap| cap.get(1).map(|m| m.as_str().to_string()))
             .collect();

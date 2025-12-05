@@ -109,20 +109,11 @@ impl ApplicationConfig {
     }
 
     /// Returns the base config directory: ~/.config/rds-cli
-    /// Follows XDG Base Directory standard on all platforms (Unix/macOS)
+    /// Uses XDG Base Directory standard (Unix/macOS)
     pub fn config_base_dir() -> Option<PathBuf> {
-        std::env::var("XDG_CONFIG_HOME")
-            .ok()
-            .map(PathBuf::from)
-            .or_else(|| {
-                std::env::var("HOME")
-                    .ok()
-                    .map(|home| PathBuf::from(home).join(".config"))
-            })
-            .map(|mut p| {
-                p.push("rds-cli");
-                p
-            })
+        // Always use ~/.config for consistency (XDG standard)
+        // Not using dirs::config_dir() as it returns ~/Library/Application Support on macOS
+        dirs::home_dir().map(|p| p.join(".config").join("rds-cli"))
     }
 
     pub fn user_config_path() -> Option<PathBuf> {

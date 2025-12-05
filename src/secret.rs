@@ -67,6 +67,12 @@ impl SecretManager {
     }
 }
 
+impl Default for SecretManager {
+    fn default() -> Self {
+        Self
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
