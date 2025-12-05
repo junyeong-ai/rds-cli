@@ -96,6 +96,28 @@ impl SchemaCache {
             .collect()
     }
 
+    pub fn find_tables_with_suggestions(
+        &self,
+        pattern: &str,
+    ) -> (Vec<&TableMetadata>, Vec<String>) {
+        let exact_matches: Vec<&TableMetadata> = self
+            .tables
+            .values()
+            .filter(|table| table.name.to_lowercase().contains(&pattern.to_lowercase()))
+            .collect();
+
+        if exact_matches.is_empty() {
+            let suggestions = self
+                .suggest_tables(pattern)
+                .into_iter()
+                .map(|(name, _)| name)
+                .collect();
+            (vec![], suggestions)
+        } else {
+            (exact_matches, vec![])
+        }
+    }
+
     pub fn get_table(&self, name: &str) -> Option<&TableMetadata> {
         self.tables.get(name)
     }

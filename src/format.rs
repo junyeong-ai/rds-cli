@@ -7,10 +7,12 @@ use tabled::{Table, Tabled};
 use crate::cache::{ColumnMetadata, ForeignKeyRelationship, TableMetadata};
 use crate::config::SavedQuery;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Default, clap::ValueEnum)]
 pub enum OutputFormat {
+    #[default]
     Table,
     Json,
+    #[value(alias = "pretty")]
     JsonPretty,
     Csv,
 }
