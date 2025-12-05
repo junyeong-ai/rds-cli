@@ -97,7 +97,7 @@ rds-cli run active_users
 
 # 파라미터 쿼리
 rds-cli saved save find_user "SELECT * FROM users WHERE email = :email"
-rds-cli run find_user --param email=test@example.com
+rds-cli run find_user --arg email=test@example.com
 ```
 
 ### 5. 다양한 출력 형식
@@ -210,8 +210,8 @@ allowed_operations = ["SELECT"]  # 읽기 전용
 | `schema show <table>` | 테이블 상세 조회 |
 | `schema relationships <table>` | 관계 분석 |
 | `query <sql>` | 쿼리 실행 |
-| `run <name> [--param k=v]` | Named query 실행 |
-| `saved [save\|delete\|show]` | 쿼리 관리 |
+| `run <name> [-a k=v]` | Named query 실행 |
+| `saved [list\|save\|delete\|show]` | 쿼리 관리 |
 | `secret set <profile>` | 비밀번호 암호화 저장 |
 | `secret get <profile>` | 비밀번호 복호화 출력 |
 | `secret remove <profile>` | 비밀번호 제거 |

@@ -97,7 +97,7 @@ rds-cli run active_users
 
 # Parameterized queries
 rds-cli saved save find_user "SELECT * FROM users WHERE email = :email"
-rds-cli run find_user --param email=test@example.com
+rds-cli run find_user --arg email=test@example.com
 ```
 
 ### 5. Multiple Output Formats
@@ -210,8 +210,8 @@ allowed_operations = ["SELECT"]  # Read-only
 | `schema show <table>` | Show table details |
 | `schema relationships <table>` | Analyze relationships |
 | `query <sql>` | Execute query |
-| `run <name> [--param k=v]` | Run named query |
-| `saved [save\|delete\|show]` | Manage queries |
+| `run <name> [-a k=v]` | Run named query |
+| `saved [list\|save\|delete\|show]` | Manage queries |
 | `secret set <profile>` | Store encrypted password |
 | `secret get <profile>` | Decrypt and print password |
 | `secret remove <profile>` | Remove password |

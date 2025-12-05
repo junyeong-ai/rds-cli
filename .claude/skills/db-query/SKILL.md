@@ -66,7 +66,7 @@ rds-cli --profile prod --format json query "SELECT * FROM orders WHERE created_a
 
 # Named query with profile
 rds-cli --profile staging --format json run order_stats
-rds-cli --format json run search_user --param email=test@example.com
+rds-cli --format json run search_user --arg email=test@example.com
 ```
 
 ### Manage Named Queries
@@ -113,7 +113,7 @@ Auto-detected from `:param_name` syntax:
 rds-cli saved save find_user "SELECT * FROM users WHERE email = :email"
 
 # Execute with parameter
-rds-cli --format json run find_user --param email=user@example.com
+rds-cli --format json run find_user --arg email=user@example.com
 ```
 
 ---

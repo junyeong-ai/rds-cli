@@ -50,7 +50,10 @@ Priority: **CLI args > Encrypted password > ENV vars > Project config > User con
 
 ### Query Validation
 
-`sqlparser` with DB dialects, auto LIMIT injection (string-based), only `SELECT` by default
+`sqlparser` with DB dialects for SQL parsing and validation:
+- **auto LIMIT**: Injects default_limit when no LIMIT specified
+- **max_limit enforcement**: Rejects queries exceeding max_limit
+- **allowed_operations**: Dynamically validates against configured operations (SELECT, EXPLAIN, INSERT, etc.)
 
 ### Named Queries
 
@@ -102,7 +105,7 @@ Storage: `.rds-cli.toml`, Parameters: `:param_name` (regex), `toml_edit` for Git
 
 ## Performance
 
-**Binary**: 6.7MB (LTO + strip)
+**Binary**: 6.9MB (LTO + strip)
 **Cache**: <5ms, **Validation**: <1ms
 **Release**: `lto = true`, `strip = true`, `opt-level = 3`
 

@@ -121,7 +121,7 @@ rds-cli --format json saved | jq '.queries[].name'
 
 # Execute
 rds-cli --format json run active_users
-rds-cli --format json run user_orders --param user_id=123 --param start_date='2025-01-01'
+rds-cli --format json run user_orders --arg user_id=123 --arg start_date='2025-01-01'
 ```
 
 ---

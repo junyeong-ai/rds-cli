@@ -110,14 +110,14 @@ rds-cli --format csv query "SELECT * FROM products"
 
 ---
 
-### `run <NAME> [--param k=v]`
+### `run <NAME> [--arg k=v]`
 
 Execute saved query:
 
 ```bash
 rds-cli --format json run order_stats
-rds-cli --format json run search_user --param email=user@example.com
-rds-cli --format json run user_orders --param user_id=123 --param status=PENDING
+rds-cli --format json run search_user --arg email=user@example.com
+rds-cli --format json run user_orders --arg user_id=123 --arg status=PENDING
 ```
 
 **Parameter format**: `key=value` (no spaces)
